@@ -28,3 +28,4 @@ D:\Yuwei\myrepo\workshop01\MyWebApplication\MyWebApplication\obj\Release\net8.0\
 D:\Yuwei\myrepo\workshop01\MyWebApplication\MyWebApplication\obj\Release\net8.0\MyWebApplication.pdb
 D:\Yuwei\myrepo\workshop01\MyWebApplication\MyWebApplication\obj\Release\net8.0\MyWebApplication.genruntimeconfig.cache
 D:\Yuwei\myrepo\workshop01\MyWebApplication\MyWebApplication\obj\Release\net8.0\ref\MyWebApplication.dll
+D:\Yuwei\myrepo\workshop01\MyWebApplication\MyWebApplication\obj\Release\net8.0\MyWebApplication.sourcelink.json
