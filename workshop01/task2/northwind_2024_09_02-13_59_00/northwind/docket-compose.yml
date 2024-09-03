@@ -1,0 +1,34 @@
+volumes:
+  # docker volume create data-vol
+  data-vol:
+
+networks:
+  # docker network create mynet
+  mynet:
+
+services:
+  myDB:
+    image: limy/myDB:v1
+    build:
+      context: database
+      dockerfile: 
+    volumes:
+    - data-vol:/var/lib/mysql
+    networks:
+    - mynet
+
+  myApp:
+    image: limy/myApp:v1
+    build:
+      context: server
+      dockerfile: 
+    environment:
+    - DB_HOST=myDB
+    - DB_USER=root
+    - DB_PASWORD=changeit
+    networks:
+    - mynet
+    ports:
+    - 8000-9000:3000
+    depends_on:
+    - myDB

@@ -1,0 +1,30 @@
+---
+# namespace
+apiVersion: v1
+kind: Namespace
+metadata: 
+ name: myns
+
+---
+# pod
+apiVersion: v1
+kind: Pod
+metadata: 
+ name: mypod
+ namespace: myns
+ labels:
+  app: myapp
+  dept: eng
+  commit: abcd123
+spec:
+ containers:
+ - name: mypo-container
+   image: chukmunnlee/dov-bear:v1
+   imagePullPolicy: IfNotPresent
+   ports:
+   - containerPort: 3000
+   env:
+   - name: INSTANCE_NAME
+     value: myfirstpod
+   - name: INSTANCE_HASH
+     value: test

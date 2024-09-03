@@ -1,0 +1,81 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bggapp-deploy
+  namespace: bggns
+  labels:
+    app: bgg
+    name: bggapp-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: bgg
+      commit: bggapppod
+  template:
+    metadata: 
+      name: myapppod
+      namespace: bggns
+      labels:
+        app: bgg
+        commit: bggapppod
+    spec:
+      containers:
+      - name: bggapppod-container
+        image: stackupiss/bgg-backend:v1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: bggapp-port
+          containerPort: 3000
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: bggapp-port
+          timeoutSeconds: 5
+          failureThreshold: 1
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: bggapp-port
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        env:
+        - name: BGG_DB_HOST
+          #value: bggdb-svc.bggns.svc.cluster.local
+          valueFrom:
+            configMapKeyRef:
+              name: bgg-config  # Reference the ConfigMap for DB host
+              key: BGG_DB_HOST
+        - name: BGG_DB_USER
+          #value: root          
+          valueFrom:
+            configMapKeyRef:
+              name: bgg-config  # Reference the ConfigMap for DB user
+              key: BGG_DB_USER
+        - name: BGG_DB_PASSWORD
+          #value: changeit
+          valueFrom:
+            secretKeyRef:
+              name: bgg-secret  # Reference the secret for DB password
+              key: BGG_DB_PASSWORD
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bggapp-svc
+  namespace: bggns
+  labels:
+    app: bgg
+    name: bggapp-svc
+spec:
+  type: LoadBalancer # ClusterIP/NodePort/LoadBalancer
+  selector: 
+    app: bgg
+    commit: bggapppod
+  ports:
+  - port: 80 # Port that the Service will expose to the outside world
+    targetPort: bggapp-port # Port on the container that the traffic will be forwarded to
+    #nodePort: 30000  # Port on the Node where the Service will be exposed

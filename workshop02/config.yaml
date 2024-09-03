@@ -1,0 +1,26 @@
+---
+# Create namespace
+apiVersion: v1
+kind: Namespace
+metadata: 
+  name: bggns
+  labels:  
+    app: bgg
+    environment: lab  # indicate dev/staging/prod
+    team: individual  # identify the responsible team
+  annotations:
+    description: "Course workshop 02"
+
+# Create configMap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bgg-config
+  namespace: bggns
+  labels:
+    app: bgg
+    name: bgg-config
+data:
+  BGG_DB_HOST: bggdb-svc.bggns.svc.cluster.local
+  BGG_DB_USER: root

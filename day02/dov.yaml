@@ -1,0 +1,40 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dov-deploy
+  namespace: myns
+  labels:
+    app: dov-deploy
+    name: dov-deploy
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: myapp
+      dept: eng
+      commit: abcd123
+  template:
+    metadata: 
+      name: mypod
+      namespace: myns
+      labels:
+        app: myapp
+        dept: eng
+        commit: abcd123
+    spec:
+      containers:
+      - name: mypo-container
+        image: chukmunnlee/dov-bear:v1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+        env:
+        - name: INSTANCE_NAME
+          valueFrom: 
+            fieldRef:
+              fieldPath: metadata.name
+        - name: INSTANCE_HASH
+          valueFrom: 
+            fieldRef:
+              fieldPath: metadata.labels['pod-template-hash']
