@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mysql-po
+  namespace: default
+spec:
+  volumes:
+  - name: 
+    # mount on node
+    hostPath:
+      path: /opt/data
+      type: DirectoryOrCreate
+  container:
+  - name: mysql-container
+    image: mysql:8
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      value: changeit
+    ports:
+    - containerPort: 3306
+    volumeMounts:
+    - name : data-vol
+      mountPath: /var/lib/mysql
+    resources: {}

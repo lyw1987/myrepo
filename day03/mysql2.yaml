@@ -1,0 +1,68 @@
+---
+# Create configMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+  namespace: default
+  labels:
+    app: lab
+    name: config
+data:
+  readme.txt: |
+    hello, world
+    hello, world
+    hello, world
+  values.yaml: |
+    controller: 
+      image: 
+        image: fred/nyimage
+  
+---
+# Create secret
+# should be isolated and exclude in commit (git.ignore)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret
+  namespace: default
+  labels:
+    app: lab
+    name: secret
+type: Opaque
+data:
+  BGG_DB_PASSWORD: Y2hhbmdlaXQ= # 'changeit' base64 encoded
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mysql-po
+  namespace: default
+spec:
+  volumes:
+    # mount on node
+  - name: data-vol
+    hostPath:
+      path: /course/static
+      type: DirectoryOrCreate
+    # mount on node, inter-container communication
+  - name: data-vol2
+    emptyDir: {}
+    # mount configmap
+  - name: config-vol
+    configMap:
+      name: config
+  containers:
+  - name: mysql-container
+    image: mysql:8
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      value: changeit
+    ports:
+    - containerPort: 3306
+    volumeMounts:
+    - name : data-vol
+      mountPath: /var/lib/mysql
+      #readonly: true
+    resources: {}

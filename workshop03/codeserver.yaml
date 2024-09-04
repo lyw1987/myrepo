@@ -1,0 +1,126 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: code-pvc
+  namespace: code-server
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: do-block-storage-retain # use 'kubectl get sc'
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: code-deploy
+  namespace: code-server
+  labels:
+    app: code
+    name: code-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: code
+      commit: code-pod
+  template:
+    metadata: 
+      name: code-pod
+      namespace: code-server
+      labels:
+        app: code
+        commit: code-pod
+    spec:
+      volumes:
+      - name: code-vol
+        persistentVolumeClaim:
+          claimName: code-pvc
+      containers:
+      - name: code-po-container
+        image: linuxserver/code-server:amd64-4.92.2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: code-port
+          containerPort: 8443
+        env:
+        - name: TZ
+          #value: Asia/Singapore
+          valueFrom:
+            configMapKeyRef:
+              name: code-config  # Reference the ConfigMap for TZ
+              key: TZ
+        - name: DEFAULT_WORKSPACE
+          #value: /config/workspace          
+          valueFrom:
+            configMapKeyRef:
+              name: code-config  # Reference the ConfigMap for DEFAULT_WORKSPACE
+              key: DEFAULT_WORKSPACE
+        - name: PROXY_DOMAIN
+          #value: code-<IP>.nip.io
+          valueFrom:
+            configMapKeyRef:
+              name: code-config  # Reference the secret for PROXY_DOMAIN
+              key: PROXY_DOMAIN
+        - name: PASSWORD
+          #value: cGFzc3dvcmQ==
+          valueFrom:
+            secretKeyRef:
+              name: code-secret  # Reference the secret for PASSWORD
+              key: PASSWORD
+        - name: SUDO_PASSWORD
+          #value: cGFzc3dvcmQ==
+          valueFrom:
+            secretKeyRef:
+              name: code-secret  # Reference the secret for SUDO_PASSWORD
+              key: SUDO_PASSWORD
+        volumeMounts:
+        - name : code-vol
+          mountPath: /config/workspace
+        resources: {}
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: code-svc
+  namespace: code-server
+  labels:
+    app: code
+    name: code-svc
+spec:
+  type: ClusterIP # ClusterIP/NodePort/LoadBalancer
+  selector: 
+    app: code
+    commit: code-pod
+  ports:
+  - port: 8443 # Port that the Service will expose to the outside world
+    targetPort: code-port # Port on the container that the traffic will be forwarded to
+    #nodePort: 30000  # Port on the Node where the Service will be exposed
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: code-ing
+  namespace: code-server
+  labels:
+    app: code
+    name: code-ing
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: code-144.126.242.197.nip.io
+    http: 
+      paths:
+      - path: /
+        pathType: Prefix # Exact/Prefix
+        backend: 
+          service:
+            name: code-svc
+            port:
+              number: 8443

@@ -1,0 +1,3 @@
+controller:
+  image:
+    image: ingress-nginx/controller

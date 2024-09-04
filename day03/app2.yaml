@@ -8,7 +8,13 @@ metadata:
     app: bgg
     name: bggapp-deploy
 spec:
-  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  revisionHistoryLimit: 10 # default is 10
+  replicas: 4
   selector:
     matchLabels:
       app: bgg
@@ -23,7 +29,7 @@ spec:
     spec:
       containers:
       - name: bggapppod-container
-        image: stackupiss/bgg-backend:v1
+        image: stackupiss/bgg-backend:v2
         imagePullPolicy: IfNotPresent
         ports:
         - name: bggapp-port

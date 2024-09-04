@@ -1,0 +1,26 @@
+---
+# Create namespace
+apiVersion: v1
+kind: Namespace
+metadata: 
+  name: csns
+  labels:  
+    app: cs
+    environment: lab  # indicate dev/staging/prod
+    team: individual  # identify the responsible team
+  annotations:
+    description: "Course workshop 03"
+
+# Create configMap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cs-config
+  namespace: csns
+  labels:
+    app: cs
+    name: cs-config
+data:
+  TZ: Asia/Singapore
+  DEFAULT_WORKSPACE: /config/wokspace
