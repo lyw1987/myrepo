@@ -1,0 +1,40 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minio-ingress
+  namespace: minio-ns
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"   # Redirect HTTP to HTTPS
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"         # Protect against slow client attacks
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"         # Limit request size
+    nginx.ingress.kubernetes.io/limit-connections: "20"       # Limit connections to prevent abuse
+    nginx.ingress.kubernetes.io/limit-rps: "10"               # Limit requests per second per IP
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: data-144.126.242.197.nip.io 
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: minio-hsvc
+                port:
+                  number: 9000
+    - host: console-144.126.242.197.nip.io 
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: minio-hsvc
+                port:
+                  number: 9090
+  # tls:
+  #   - hosts:
+  #       - data-144.126.242.197.nip.io
+  #       - console-144.126.242.197.nip.io
+  #     secretName: minio-tls-secret   # TLS certificate secret for HTTPS

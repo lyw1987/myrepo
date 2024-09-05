@@ -10,7 +10,7 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: do-block-storage-retain # use 'kubectl get sc'
+  storageClassName: do-block-storage # use 'kubectl get sc'
 
 ---
 apiVersion: apps/v1
@@ -35,18 +35,24 @@ spec:
         app: code
         commit: code-pod
     spec:
+      securityContext:
+        fsGroup: 1000
       volumes:
       - name: code-vol
         persistentVolumeClaim:
           claimName: code-pvc
       containers:
       - name: code-po-container
-        image: linuxserver/code-server:amd64-4.92.2
+        image: linuxserver/code-server@sha256:b0448d77791bc8fa30cc2ce2c983cbc8d5e7c7019d0c96034d14bffdc801004e
         imagePullPolicy: IfNotPresent
         ports:
         - name: code-port
           containerPort: 8443
         env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
         - name: TZ
           #value: Asia/Singapore
           valueFrom:
@@ -79,9 +85,14 @@ spec:
               key: SUDO_PASSWORD
         volumeMounts:
         - name : code-vol
-          mountPath: /config/workspace
-        resources: {}
-
+          mountPath: /config/workspace        
+        resources: # can define a limitRange
+          requests: # provision the lower and upper limit (--> QOS=BestEffortBurstable/Guaranteed)
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
 
 ---
 apiVersion: v1

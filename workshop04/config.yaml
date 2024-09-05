@@ -1,0 +1,30 @@
+---
+# Create namespace
+apiVersion: v1
+kind: Namespace
+metadata: 
+  name: minio-ns
+  labels:  
+    app: minio
+    environment: lab  # indicate dev/staging/prod
+    team: individual  # identify the responsible team
+  annotations:
+    description: "Course workshop 04"
+
+# Create configMap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-config
+  namespace: minio-ns
+  labels:
+    app: minio
+    name: minio-config
+data:
+  MINIO_ROOT_USER: root
+  MINIO_DATA_DIR: /data
+  MINIO_DISTRIBUTED_MODE_ENABLED: "yes"
+  MINIO_DISTRIBUTED_NODES: minio-sts-{0...3}.minio-hsvc.minio-ns.svc.cluster.local/data
+  MINIO_API_PORT_NUMBER: "9000"
+  MINIO_CONSOLE_PORT_NUMBER: "9090"

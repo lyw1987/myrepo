@@ -1,0 +1,128 @@
+--- 
+# Create Headless stateful Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-hsvc
+  namespace: minio-ns
+  labels:
+    app: minio
+    name: minio-hsvc
+spec:
+  clusterIP: None
+  selector: 
+    app: minio
+  ports:
+    - name: minio
+      port: 9000 # Port that the Service will expose to the outside world
+      targetPort: 9000 # Port on the container that the traffic will be forwarded to
+      #nodePort: 30000  # Port on the Node where the Service will be exposed
+    - name: minio-console
+      port: 9090 # Port that the Service will expose to the outside world
+      targetPort: 9090 # Port on the container that the traffic will be forwarded to
+      #nodePort: 30000  # Port on the Node where the Service will be exposed
+
+---
+# Create Stateful Set
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio-sts
+  namespace: minio-ns
+  labels:
+    app: minio
+    name: minio-sts
+spec:
+  serviceName: minio-hsvc
+  replicas: 4
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata: 
+      name: minio-pod
+      namespace: minio-ns
+      labels:
+        app: minio
+    spec:
+      securityContext:
+        fsGroup: 1001
+      containers:
+        - name: minio-container
+          image: bitnami/minio:2024.8.29
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: minio
+              containerPort: 9000
+            - name: minio-console
+              containerPort: 9090
+          env:
+            - name: PUID
+              value: "1001"
+            - name: PGID
+              value: "1001"
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: minio-config
+                  key: MINIO_ROOT_USER
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secret
+                  key: MINIO_ROOT_PASSWORD
+            - name: MINIO_DATA_DIR
+              valueFrom:
+                configMapKeyRef:
+                  name: minio-config
+                  key: MINIO_DATA_DIR
+            - name: MINIO_DISTRIBUTED_MODE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: minio-config
+                  key: MINIO_DISTRIBUTED_MODE_ENABLED
+            - name: MINIO_DISTRIBUTED_NODES
+              valueFrom:
+                configMapKeyRef:
+                  name: minio-config
+                  key: MINIO_DISTRIBUTED_NODES
+            - name: MINIO_API_PORT_NUMBER  
+              valueFrom:
+                configMapKeyRef:
+                  name: minio-config
+                  key: MINIO_API_PORT_NUMBER  
+            - name: MINIO_CONSOLE_PORT_NUMBER  
+              valueFrom:
+                configMapKeyRef:
+                  name: minio-config
+                  key: MINIO_CONSOLE_PORT_NUMBER         
+          resources: # can define a limitRange
+            requests: # provision the lower and upper limit (--> QOS=BestEffortBurstable/Guaranteed)
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          volumeMounts:
+            - name : data
+              mountPath: /data  
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: 9000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi

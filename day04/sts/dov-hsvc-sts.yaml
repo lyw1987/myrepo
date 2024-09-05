@@ -1,0 +1,67 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dovns
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dov-hsvc
+  namespace: dovns
+  labels:
+    app: dov
+    name: dov-hsvc
+spec:
+  clusterIP: None
+  selector:
+    app: dov
+    name: dov-po
+  ports:
+  - port: 3000
+    targetPort: 3000
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dov-sts
+  namespace: dovns
+  labels:
+    app: dov
+    name: dov-sts
+spec:
+  replicas: 3
+  serviceName: dov-hsvc
+  selector:
+    matchLabels:
+      app: dov
+      name: dov-po
+  template:
+    metadata:
+      labels:
+        app: dov
+        name: dov-po
+    spec:
+      containers:
+      - name: dov-container
+        image: chukmunnlee/dov-bear:v5
+        env:
+        - name: INSTANCE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: INSTANCE_HASH
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['pod-template-hash']
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            memory: "64Mi"   # Minimum memory required
+            cpu: "250m"      # Minimum CPU required (250 millicores)
+          limits:
+            memory: "64Mi"   # Minimum memory required
+            cpu: "250m"      # Minimum CPU required (250 millicores)
